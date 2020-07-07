@@ -1,4 +1,4 @@
-USE empTrack_db;
+USE employTrack_db;
     --PRS Employee
 INSERT INTO employee (id, first_name, last_name, role_id, manager_id)
 VALUES (1, "Joseph", "Arocha", 3, 5)
@@ -8,7 +8,7 @@ INSERT INTO department (ID, deptName)
 VALUES (1, "Sales")
     --Technician Employee
 INSERT INTO employee (id, first_name, last_name, role_id, manager_id)
-VALUES (2, "Jesse", "Diaz", 4, 6)
+VALUES (2, "Jesse", "Diaz", 2, 6)
 INSERT INTO empRole (id, title, salary, department_id)
 VALUES (2, "Technician", 60000, 2)
 INSERT INTO department (ID, deptName)
