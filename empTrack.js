@@ -90,12 +90,13 @@ function beginPrompt() {
         });
 }
 // this function allows users to see all employees
-function viewEmployees() {
+
+let viewEmployees = () => {
     var query = "SELECT * FROM employee";
     connection.query(query, (err,answer) => {
     if (err) throw err;
     console.log("All employees currently employed");
-    console.log(answer);    
+    console.table(answer);    
     });
     beginPrompt();
 } 
@@ -109,30 +110,28 @@ function viewEmployeesDept() {
 }
 // this fucntion allows users to view employees by manager.
 function viewEmployeesManager() {
-    inquirer
-        .prompt({
-            name: "manager_id",
-            type: "list",
-            message: "Select manager",
-            choices: [
-                "Shaun Neidig",
-                "Larry Dehart",
-                "Rhonda Woodward"
-            ]
-        })
-        .then((answer) => {
-            var query = "SELECT manager_id FROM employee WHERE ?";
-            connection.query(query, {
-                manager_id: answer.manager_id
-            }, (err, res) => {
-                if (err) throw err;
-                for (var i = 0; i < res.length; i++) {
-                    console.log("manager_id" + res[i].manager_id)
-                }
+    inquirer.prompt({
+        name:"manager",
+        type: "list",
+        message: "view employees by manager",
+        choices: [
+            "Shaun Neidig",
+            "Larry Dehart",
+            "Rhonda Woodard"
+        ]
+        .then(function(answer) {
+        switch (answer.action) {
+            case "Shaun Neidig":
+                salesManager();
+                break;
 
-            });
-        });
-        beginPrompt();
+                case "Larry Dehart":
+                    plumbingManager();
+                    break;
+        }
+        })
+    });  
+    // beginPrompt();
 }
 
 function addEmployee() {
