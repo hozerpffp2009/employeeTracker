@@ -16,12 +16,12 @@ const connection = mysql.createConnection({
     database: "employTrack_db"
 });
 
-connection.connect(function (err) {
+connection.connect((err) => {
     if (err) throw err;
     beginPrompt();
 });
 // begin function for asking prompt statemants
-function beginPrompt() {
+let beginPrompt = () => {
     inquirer
         .prompt({
             name: "action",
@@ -30,7 +30,7 @@ function beginPrompt() {
             choices: [
                 "View all employees",
                 "View all departments",
-                "View all employees by manager",
+                "View all employees by manager id",
                 "Add employee",
                 "Remove employee",
                 "Update employee role",
@@ -51,7 +51,7 @@ function beginPrompt() {
                     viewEmployeesDept();
                     break;
 
-                case "View all employees by manager":
+                case "View all employees by manager id":
                     viewEmployeesManager();
                     break;
 
@@ -93,48 +93,71 @@ function beginPrompt() {
 
 let viewEmployees = () => {
     var query = "SELECT * FROM employee";
-    connection.query(query, (err,answer) => {
-    if (err) throw err;
-    console.log("All employees currently employed");
-    console.table(answer);    
+    connection.query(query, (err, answer) => {
+        if (err) throw err;
+        console.log("All employees currently employed");
+        console.table(answer);
     });
     beginPrompt();
-} 
+}
 // this function allows users to view all dept.
-function viewEmployeesDept() {
+let viewEmployeesDept = () => {
     connection.query("SELECT * FROM department", (err, answer) => {
         if (err) throw err;
-        console.log("All departments")
-        console.table(answer)
-    }); beginPrompt();
+        console.log("All departments");
+        console.table(answer);
+    });
+    beginPrompt();
 }
 // this fucntion allows users to view employees by manager.
-function viewEmployeesManager() {
-    inquirer.prompt({
-        name:"manager",
-        type: "list",
-        message: "view employees by manager",
-        choices: [
-            "Shaun Neidig",
-            "Larry Dehart",
-            "Rhonda Woodard"
-        ]
-        .then(function(answer) {
-        switch (answer.action) {
-            case "Shaun Neidig":
-                salesManager();
-                break;
+let viewEmployeesManager = () => {
+    connection.query("SELECT * FROM employee ORDER BY manager_id", (err, answer) => {
+        if (err) throw err;
+        console.log("all employees by manager id");
+        console.table(answer);
+    })
 
-                case "Larry Dehart":
-                    plumbingManager();
-                    break;
-        }
-        })
-    });  
-    // beginPrompt();
+    beginPrompt();
 }
 
-function addEmployee() {
+let addRole = () => {
+    inquirer.prompt([{
+                name: "roleTitle",
+                type: "input",
+                message: "Enter name of new role"
+            },
+            {
+                name: "roleSalary",
+                type: "input",
+                message: "Enter the salary amount"
+            },
+            {
+                name: "roleDeptID",
+                type: "list",
+                choices: [
+                    "5",
+                    "6",
+                    "7",
+                    "8",
+                    "9",
+
+                ]
+            }
+        ])
+        .then((answer) => {
+            connection.query("INSERT INTO emprole SET ?", {
+                    title: answer.roleTitle,
+                    salary: answer.roleSalary,
+                    department_id: answer.roleDeptID                   
+                }),
+                (err) => {
+                    if (err) throw err;
+                }
+            console.log("Successfully added role")
+        })
+}
+
+let addEmployee = () => {
     inquirer
         .prompt([{
                 name: "firstName",
@@ -148,59 +171,88 @@ function addEmployee() {
             },
             {
                 name: "roleID",
-                type: "input",
-                message: "Type in employees role id 1 = PRS, 2 = Technician, 3 = Dispatch, 4 = CSR"
+                type: "list",
+                choices: [
+                    "1",
+                    "2",
+                    "3",
+                    "4"
+                ]
             },
             {
                 name: "managerID",
-                type: "input",
-                message: "Type in employees manager id 5 = Shaun neidig, 6 = Larry Dehart, 7 = Rhonda Woodward"
-            },
-            {
-                name: "Salary",
-                type: "input",
-                message: "Type in employees salary"
-            },
-            {
-                name: "dept",
-                type: "input",
-                message: "Type in employees department id 1 = Sales, 2 = Plumbing, 3 = Dispatch, 4 = CSR",
+                type: "list",
+                choices: [
+                    "5",
+                    "6",
+                    "7"
+                ]
             }
 
         ])
-        .then(function (answer) {
-            connection.query("INSERT INTO employee, empRole, department SET ?", {
+        .then((answer) => {
+            connection.query("INSERT INTO employee SET ?", {
                     first_name: answer.firstName,
                     last_name: answer.lastName,
                     role_id: answer.roleID,
-                    manager_id: answer.managerID,
-                    salary: answer.Salary,
-                    department_id: answer.dept
-                },
-                function (err) {
+                    manager_id: answer.managerID
+                }),
+                (err) => {
                     if (err) throw err;
-                    console.log("New employee submitted succesfully")
-                    beginPrompt();
                 }
-            );
+            console.log("Successfully added employee")
         })
+
 }
 
-function removeEmployee() {
+let removeEmployee = () => {
     connection.query("SELECT * FROM employee", (err, results) => {
         if (err) throw err;
-
         inquirer
-            .prompt({
+            .prompt([{
                 name: "remove",
-                type: "rawlist",
-                choices: function () {
-                    var choiceArray = [];
-                    for (var i = 0; i < results.length; i++) {
-                        choiceArray.push(results[i].first_name + results[i].last_name);
-                    }
-                    return choiceArray;
-                }
-            })
-    })
+                type: "input",
+                message: "Enter employee ID# you wish to remove"
+            }])
+            .then((answer) => {
+                connection.query("DELETE FROM employee where ?", {
+                    id: answer.remove
+
+                });
+                console.log("Successfully deleted employee")
+                beginPrompt();
+            });
+    });
+
+}
+
+let removeRole = () => {
+    connection.query("SELECT title FROM emprole", (err, results) => {
+        if (err) throw err;
+        inquirer
+            .prompt([{
+                name: "remove",
+                type: "input",
+                message: "Enter role ID# you wish to remove"
+            }])
+            .then((answer) => {
+                connection.query("DELETE FROM emprole where ?", {
+                    id: answer.remove
+
+                });
+                console.log("Successfully deleted role")
+                beginPrompt();
+            });
+    });
+
+}
+
+let viewRoles = () => {
+    var query = "SELECT title FROM emprole";
+    connection.query(query, (err, answer) => {
+        if (err) throw err;
+        console.log("All employees currently employed");
+        console.table(answer);
+    });
+    beginPrompt();
 }
