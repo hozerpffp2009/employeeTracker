@@ -33,8 +33,7 @@ let beginPrompt = () => {
                 "View all employees by manager id",
                 "Add employee",
                 "Remove employee",
-                "Update employee role",
-                "Update employee manager",
+                "Remove manager",
                 "View all roles",
                 "Add role",
                 "Remove role",
@@ -63,12 +62,8 @@ let beginPrompt = () => {
                     removeEmployee();
                     break;
 
-                case "Update employee role":
-                    updateRole();
-                    break;
-
-                case "Update employee manager":
-                    updatedManager();
+                case "Remove manager":
+                    removeManager();
                     break;
 
                 case "View all roles":
@@ -115,95 +110,129 @@ let viewEmployeesManager = () => {
         if (err) throw err;
         console.log("all employees by manager id");
         console.table(answer);
-    })
+    });
+    beginPrompt();
+}
 
+let viewRoles = () => {
+    var query = "SELECT * FROM emprole";
+    connection.query(query, (err, answer) => {
+        if (err) throw err;
+        console.log("All employees currently employed");
+        console.table(answer);
+    });
     beginPrompt();
 }
 
 let addRole = () => {
-    inquirer.prompt([{
-                name: "roleTitle",
+    connection.query("SELECT * FROM emprole", (err, results) => {
+        inquirer.prompt([
+            {
+                name: "emproleid",
                 type: "input",
-                message: "Enter name of new role"
+                message: "Enter desired role id# Greater then 8"
             },
             {
-                name: "roleSalary",
-                type: "input",
-                message: "Enter the salary amount"
-            },
-            {
-                name: "roleDeptID",
-                type: "list",
-                choices: [
-                    "5",
-                    "6",
-                    "7",
-                    "8",
-                    "9",
+                    name: "roleTitle",
+                    type: "input",
+                    message: "Enter name of new role"
+                },
+                {
+                    name: "roleSalary",
+                    type: "input",
+                    message: "Enter the salary amount"
+                },
+                {
+                    name: "roleDeptID",
+                    type: "rawlist",
+                    choices: function () {
+                        var choiceArray = [];
+                        for (var i = 0; i < results.length; i++) {
+                            choiceArray.push(results[i].department_id);
+                        }
+                        return choiceArray
+                    }
 
-                ]
-            }
-        ])
-        .then((answer) => {
-            connection.query("INSERT INTO emprole SET ?", {
-                    title: answer.roleTitle,
-                    salary: answer.roleSalary,
-                    department_id: answer.roleDeptID                   
-                }),
-                (err) => {
-                    if (err) throw err;
                 }
-            console.log("Successfully added role")
-        })
+            ])
+            .then((answer) => {
+                connection.query("INSERT INTO emprole SET ?", {
+                        id: answer.emproleid,
+                        title: answer.roleTitle,
+                        salary: answer.roleSalary,
+                        department_id: answer.roleDeptID
+                    }),
+                    (err) => {
+                        if (err) throw err;
+                    }
+                console.log("Successfully added role")
+                beginPrompt();
+            })
+    }); 
 }
 
 let addEmployee = () => {
-    inquirer
-        .prompt([{
-                name: "firstName",
-                type: "input",
-                message: "Type in employees first name."
-            },
-            {
-                name: "lastName",
-                type: "input",
-                message: "Type in employees last name."
-            },
-            {
-                name: "roleID",
-                type: "list",
-                choices: [
-                    "1",
-                    "2",
-                    "3",
-                    "4"
-                ]
-            },
-            {
-                name: "managerID",
-                type: "list",
-                choices: [
-                    "5",
-                    "6",
-                    "7"
-                ]
-            }
-
-        ])
-        .then((answer) => {
-            connection.query("INSERT INTO employee SET ?", {
-                    first_name: answer.firstName,
-                    last_name: answer.lastName,
-                    role_id: answer.roleID,
-                    manager_id: answer.managerID
-                }),
-                (err) => {
-                    if (err) throw err;
+    connection.query("SELECT * FROM employee", (err, results) => {
+        if (err) throw err;
+        inquirer
+            .prompt([
+                {
+                    name: "empid",
+                    type: "input",
+                    message: "Enter desired employee id# Greater then 8"
+                },
+                {
+                    name: "firstName",
+                    type: "input",
+                    message: "Type in employees first name."
+                },
+                {
+                    name: "lastName",
+                    type: "input",
+                    message: "Type in employees last name."
+                },
+                {
+                    name: "roleID",
+                    type: "rawlist",
+                    choices: function () {
+                        var choiceArray = [];
+                        for (var i = 0; i < results.length; i++) {
+                            choiceArray.push(results[i].role_id);
+                        }
+                        return choiceArray;
+                    }
+                },
+                {
+                    name: "managerID",
+                    type: "rawlist",
+                    choices: function () {
+                        var choiceArray = [];
+                        for (var i = 0; i < results.length; i++) {
+                            choiceArray.push(results[i].manager_id);
+                        }
+                        return choiceArray;
+                    }
+                       
                 }
-            console.log("Successfully added employee")
-        })
 
-}
+            ])
+            .then((answer) => {
+                connection.query("INSERT INTO employee SET ?", {
+                        id: answer.empid,
+                        first_name: answer.firstName,
+                        last_name: answer.lastName,
+                        role_id: answer.roleID,
+                        manager_id: answer.managerID
+                    }),
+                    (err) => {
+                        if (err) throw err;
+                    }
+                console.log("Successfully added employee")
+                beginPrompt();
+            });            
+    });
+    
+}    
 
 let removeEmployee = () => {
     connection.query("SELECT * FROM employee", (err, results) => {
@@ -227,7 +256,7 @@ let removeEmployee = () => {
 }
 
 let removeRole = () => {
-    connection.query("SELECT title FROM emprole", (err, results) => {
+    connection.query("SELECT * FROM emprole", (err, results) => {
         if (err) throw err;
         inquirer
             .prompt([{
@@ -247,12 +276,25 @@ let removeRole = () => {
 
 }
 
-let viewRoles = () => {
-    var query = "SELECT title FROM emprole";
-    connection.query(query, (err, answer) => {
+let removeManager = () => {
+    connection.query("SELECT * FROM employee", (err, results) => {
         if (err) throw err;
-        console.log("All employees currently employed");
-        console.table(answer);
+        inquirer
+            .prompt([{
+                name: "remManager",
+                type: "input",
+                message: "Enter manager ID# you wish to remove (5, 6, 7)"
+            }])
+            .then((answer) => {
+                connection.query("DELETE FROM employee where ?", {
+                   manager_id: answer.remManager
+
+                });
+                console.log("Successfully deleted manager");
+                console.table(answer);
+                beginPrompt();
+            });
     });
-    beginPrompt();
+
 }
+
