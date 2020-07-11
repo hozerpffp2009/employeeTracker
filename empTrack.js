@@ -32,6 +32,7 @@ let beginPrompt = () => {
                 "View all employees by manager id",
                 "Add employee",
                 "Add manager",
+                "Add Department",
                 "Remove employee",
                 "Remove manager",
                 "View all roles",
@@ -61,6 +62,10 @@ let beginPrompt = () => {
                 case "Add manager":
                     addManager();
                     break;
+
+                    case "Add Department":
+                        addDepartment();
+                        break;
 
                 case "Remove employee":
                     removeEmployee();
@@ -173,6 +178,35 @@ let addRole = () => {
             })
     });
 }
+
+let addDepartment = () => {
+    connection.query("SELECT * FROM department", (err, results) => {
+        inquirer.prompt([{
+                    name: "deptid",
+                    type: "input",
+                    message: "Enter desired dept id# Greater then 10"
+                },
+                {
+                    name: "deptname",
+                    type: "input",
+                    message: "Enter name of new department"
+                }
+            ])
+            .then((answer) => {
+                connection.query("INSERT INTO department SET ?", {
+                        id: answer.deptid,
+                        deptName: answer.deptname,                     
+                    }),
+                    (err) => {
+                        if (err) throw err;
+                    }
+                console.log("Successfully added new department");
+                console.table(answer);
+                beginPrompt();
+            })
+    });
+}
+
 // this function allows users to add new employee
 let addEmployee = () => {
     connection.query("SELECT * FROM employee", (err, results) => {
